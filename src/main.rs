@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 
 #[derive(FromArgs)]
 /// A simple calculation tool
-struct DirtCli {
+struct MyCli {
     #[argh(subcommand)]
     subcommand: SubCommands,
 }
@@ -20,32 +20,46 @@ struct DirtCli {
 #[argh(subcommand)]
 enum SubCommands {
     Scan(ScanOptions),
+    Blobs(BlobsOptions),
 }
 
 #[derive(FromArgs, PartialEq, Debug)]
-/// Add two numbers
+/// Scan file system, generate checksums
 #[argh(subcommand, name = "scan")]
 pub struct ScanOptions {
-    /// the first number.
     #[argh(option)]
+    /// path to scan
     path: PathBuf,
+}
+
+#[derive(FromArgs, PartialEq, Debug)]
+/// Query OpenStack Swift for blobs
+#[argh(subcommand, name = "blobs")]
+pub struct BlobsOptions {
+    #[argh(option)]
+    /// swift API url
+    url: String,
+    #[argh(option)]
+    /// swift API password
+    password: String,
 }
 
 pub struct FileInfo {
     pub path: PathBuf,
     pub size: usize,
-    pub checksum: String
-} 
+    pub checksum: String,
+}
 
 fn main() -> Result<()> {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
-    let cli: DirtCli = argh::from_env();
+    let cli: MyCli = argh::from_env();
     match cli.subcommand {
         SubCommands::Scan(options) => {
             let res = scan(&options.path)?;
             info!("Checksum for {} is {}", options.path.to_string_lossy(), res)
         }
+        SubCommands::Blobs(options) => info!("URL {}, password {}", options.url, options.password),
     };
 
     Ok(())
